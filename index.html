@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chibi Food Quest: What are these? What are those?</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka for playful Chibi UI & Nunito for crisp readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js for cute synthesized sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --chibi-coral: #FF6B4A;
+            --chibi-coral-dark: #D9482B;
+            --chibi-teal: #14B8A6;
+            --chibi-teal-dark: #0F766E;
+            --chibi-cream: #FFFDF7;
+            --chibi-yellow: #FFD166;
+            --chibi-ink: #2B2D42;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #E0F7FA;
+            background-image: 
+                radial-gradient(#B2EBF2 2px, transparent 2px),
+                radial-gradient(#FFCCBC 2px, #E0F7FA 2px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            color: var(--chibi-ink);
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        h1, h2, h3, .chibi-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .chibi-card {
+            background: var(--chibi-cream);
+            border: 4px solid var(--chibi-ink);
+            border-radius: 28px;
+            box-shadow: 0 8px 0 var(--chibi-ink);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chibi-btn {
+            font-family: 'Fredoka', sans-serif;
+            border: 3px solid var(--chibi-ink);
+            border-radius: 20px;
+            box-shadow: 0 5px 0 var(--chibi-ink);
+            transition: all 0.12s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chibi-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0 var(--chibi-ink);
+        }
+
+        .chibi-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 var(--chibi-ink);
+        }
+
+        .chibi-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-coral { background-color: var(--chibi-coral); color: white; }
+        .btn-teal { background-color: var(--chibi-teal); color: white; }
+        .btn-yellow { background-color: var(--chibi-yellow); color: var(--chibi-ink); }
+        .btn-white { background-color: #FFFFFF; color: var(--chibi-ink); }
+
+        @keyframes floatChibi {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            70% { transform: scale(1.06); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-6px); }
+        }
+
+        .animate-float { animation: floatChibi 3s ease-in-out infinite; }
+        .animate-pop { animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-shake { animation: shake 0.35s ease-in-out; }
+
+        @keyframes stampPop {
+            0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1.0) rotate(0deg); opacity: 1; }
+        }
+
+        .stamp-correct {
+            animation: stampPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            background-color: #A7F3D0;
+            border: 4px solid #059669;
+            color: #065F46;
+        }
+
+        .stamp-wrong {
+            animation: stampPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            background-color: #FEE2E2;
+            border: 4px solid #DC2626;
+            color: #991B1B;
+        }
+
+        .zoom-lens {
+            position: relative;
+            overflow: hidden;
+            border: 5px solid var(--chibi-ink);
+            border-radius: 50%;
+            box-shadow: inset 0 0 25px rgba(43, 45, 66, 0.25), 0 8px 0 var(--chibi-ink);
+            background: #FFF9EC;
+        }
+
+        .letter-slot {
+            min-width: 44px;
+            height: 52px;
+            border: 3px dashed #94A3B8;
+            border-radius: 14px;
+            background: #F8FAFC;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .letter-slot.filled {
+            border-style: solid;
+            border-color: var(--chibi-ink);
+            background: var(--chibi-yellow);
+            box-shadow: 0 4px 0 var(--chibi-ink);
+            cursor: pointer;
+        }
+
+        .draggable-tile {
+            min-width: 46px;
+            height: 52px;
+            padding: 0 12px;
+            border: 3px solid var(--chibi-ink);
+            border-radius: 14px;
+            background: #FFFFFF;
+            box-shadow: 0 4px 0 var(--chibi-ink);
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            touch-action: manipulation;
+        }
+
+        .word-slot {
+            min-width: 95px;
+            height: 52px;
+            padding: 0 14px;
+            border: 3px dashed #94A3B8;
+            border-radius: 16px;
+            background: #F8FAFC;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .word-slot.filled {
+            border-style: solid;
+            border-color: var(--chibi-ink);
+            background: #A7F3D0;
+            box-shadow: 0 4px 0 var(--chibi-ink);
+            cursor: pointer;
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #E0F7FA; }
+        ::-webkit-scrollbar-thumb { background: var(--chibi-teal); border-radius: 10px; border: 2px solid var(--chibi-ink); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- TOP NAVIGATION HEADER -->
+    <header class="w-full max-w-6xl mx-auto px-3 pt-4 pb-2">
+        <div class="chibi-card px-4 py-3 flex flex-wrap items-center justify-between gap-3 bg-white">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
+                <div class="w-12 h-12 rounded-2xl bg-[#FF6B4A] border-3 border-[#2B2D42] flex items-center justify-center shadow-sm animate-float">
+                    <svg viewBox="0 0 64 64" class="w-10 h-10">
+                        <circle cx="32" cy="36" r="18" fill="#FFE0BD" stroke="#2B2D42" stroke-width="3"/>
+                        <path d="M16 24 C12 16, 22 10, 32 12 C42 10, 52 16, 48 24 Z" fill="#FFFFFF" stroke="#2B2D42" stroke-width="3"/>
+                        <rect x="18" y="21" width="28" height="6" rx="2" fill="#14B8A6" stroke="#2B2D42" stroke-width="2.5"/>
+                        <circle cx="25" cy="36" r="2.8" fill="#2B2D42"/>
+                        <circle cx="39" cy="36" r="2.8" fill="#2B2D42"/>
+                        <path d="M29 41 Q32 45 35 41" fill="none" stroke="#2B2D42" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-[#2B2D42] leading-tight">Chibi Food Quest!</h1>
+                    <p class="text-xs sm:text-sm font-bold text-[#0F766E]">What are these? / What are those?</p>
+                </div>
+            </div>
+
+            <nav class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <button onclick="switchTab('zoom')" id="tab-zoom" class="chibi-btn btn-coral px-3 py-2 text-xs sm:text-sm font-bold">🔍 1. Zoom Guess</button>
+                <button onclick="switchTab('scramble')" id="tab-scramble" class="chibi-btn btn-white px-3 py-2 text-xs sm:text-sm font-bold">🧩 2. Drag & Spell</button>
+                <button onclick="switchTab('dialogue')" id="tab-dialogue" class="chibi-btn btn-white px-3 py-2 text-xs sm:text-sm font-bold">💬 3. Story Q&A</button>
+                <button onclick="switchTab('restaurant')" id="tab-restaurant" class="chibi-btn btn-white px-3 py-2 text-xs sm:text-sm font-bold">🍽️ 4. My Café Menu</button>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                <div class="bg-[#FFD166] border-3 border-[#2B2D42] rounded-2xl px-3 py-1.5 flex items-center gap-1.5 font-extrabold text-sm shadow-[0_3px_0_#2B2D42]">
+                    <span>⭐</span>
+                    <span id="star-count">0</span>
+                </div>
+                <button onclick="toggleSound()" id="sound-btn" class="chibi-btn btn-teal p-2 text-sm" title="Toggle Sound">🔊</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-6xl mx-auto px-3 py-4 flex-grow">
+        
+        <!-- HOME SECTION -->
+        <section id="section-home" class="animate-pop">
+            <div class="chibi-card p-6 sm:p-8 bg-white text-center">
+                <div class="inline-block bg-[#CCFBF1] border-2 border-[#0F766E] text-[#0F766E] font-extrabold px-4 py-1 rounded-full text-sm mb-3">
+                    ✨ Sentence Pattern Practice ✨
+                </div>
+                <h2 class="text-3xl sm:text-5xl font-bold text-[#FF6B4A] mb-3">
+                    "What are these? What are those?"
+                </h2>
+                <div class="inline-block bg-[#FFF3CD] border-3 border-[#2B2D42] rounded-2xl px-6 py-3 mb-6 shadow-[0_4px_0_#2B2D42]">
+                    <p class="text-xl sm:text-2xl font-extrabold text-[#2B2D42]">
+                        👉 "They're <span class="text-[#14B8A6] underline decoration-wavy">apples / bananas / hamburgers...</span>!"
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8" id="vocab-preview-grid"></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+                    <div onclick="switchTab('zoom')" class="chibi-card p-5 bg-[#FFF5F2] hover:bg-[#FFE8E0] cursor-pointer">
+                        <div class="text-4xl mb-2">🔍</div>
+                        <h3 class="text-xl font-bold text-[#D9482B]">1. Super Zoom!</h3>
+                        <p class="text-sm font-semibold text-gray-700 mt-1">Guess what real food textures are shown in macro zoom!</p>
+                    </div>
+                    <div onclick="switchTab('scramble')" class="chibi-card p-5 bg-[#F0FDFA] hover:bg-[#CCFBF1] cursor-pointer">
+                        <div class="text-4xl mb-2">🧩</div>
+                        <h3 class="text-xl font-bold text-[#0F766E]">2. Drag & Spell</h3>
+                        <p class="text-sm font-semibold text-gray-700 mt-1">Independent parts for word spelling & sentence reordering!</p>
+                    </div>
+                    <div onclick="switchTab('dialogue')" class="chibi-card p-5 bg-[#FFFBEB] hover:bg-[#FEF3C7] cursor-pointer">
+                        <div class="text-4xl mb-2">💬</div>
+                        <h3 class="text-xl font-bold text-[#B45309]">3. Chibi Stories</h3>
+                        <p class="text-sm font-semibold text-gray-700 mt-1">Relatable dialogues with comprehension Q&As!</p>
+                    </div>
+                    <div onclick="switchTab('restaurant')" class="chibi-card p-5 bg-[#FDF2F8] hover:bg-[#FCE7F3] cursor-pointer">
+                        <div class="text-4xl mb-2">🍽️</div>
+                        <h3 class="text-xl font-bold text-[#BE185D]">4. Chibi Café</h3>
+                        <p class="text-sm font-semibold text-gray-700 mt-1">Build your café menu, view full-screen, and practice!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 1: ZOOM GUESS -->
+        <section id="section-zoom" class="hidden animate-pop">
+            <div class="chibi-card p-5 sm:p-8 bg-white">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-6 border-b-4 border-dashed border-[#E2E8F0] pb-4">
+                    <div>
+                        <span class="bg-[#FF6B4A] text-white text-xs font-extrabold px-3 py-1 rounded-full uppercase">Stage 1</span>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-[#2B2D42] mt-1">🔍 Mystery Super-Zoom!</h2>
+                        <p class="text-sm font-bold text-gray-600">Look at the extreme macro food texture and guess what they are!</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-sm bg-[#CCFBF1] text-[#0F766E] px-3 py-1.5 rounded-xl border-2 border-[#0F766E]">
+                            Question <span id="zoom-q-num">1</span> / 7
+                        </span>
+                        <button onclick="hintZoomOut()" id="zoom-hint-btn" class="chibi-btn btn-yellow px-3 py-1.5 text-sm font-bold">🔎 Zoom Out Hint</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div class="lg:col-span-6 flex flex-col items-center">
+                        <div id="zoom-context-banner" class="w-full max-w-md mb-4 p-3 rounded-2xl border-3 border-[#2B2D42] bg-[#FFFBEB] flex items-center justify-between shadow-[0_4px_0_#2B2D42]">
+                            <div class="flex items-center gap-2">
+                                <span id="zoom-pointer-icon" class="text-3xl">👇</span>
+                                <div>
+                                    <span id="zoom-distance-tag" class="text-xs font-extrabold uppercase px-2 py-0.5 rounded bg-[#14B8A6] text-white">Right here (Near)</span>
+                                    <p id="zoom-question-text" class="text-lg sm:text-xl font-extrabold text-[#2B2D42]">"What are these?"</p>
+                                </div>
+                            </div>
+                            <button onclick="speakText(document.getElementById('zoom-question-text').innerText)" class="chibi-btn btn-white p-2">🔊</button>
+                        </div>
+
+                        <div class="zoom-lens w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center relative bg-[#2B2D42]">
+                            <div id="zoom-svg-container" class="w-full h-full transition-transform duration-300 ease-out absolute" style="left:0%; top:0%;"></div>
+                            <div id="zoom-badge" class="absolute bottom-3 bg-[#2B2D42]/90 text-white text-xs font-extrabold px-3 py-1 rounded-full border border-white/30 z-10">🔬 550% Macro Zoom</div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6 flex flex-col gap-3">
+                        <div class="bg-[#F0FDFA] border-3 border-[#14B8A6] rounded-2xl p-4 mb-1">
+                            <p class="font-extrabold text-[#0F766E] text-lg">Complete the answer:</p>
+                            <p class="text-xl sm:text-2xl font-black text-[#2B2D42] mt-1">"They're <span id="zoom-blank-preview" class="text-[#FF6B4A] underline decoration-dotted">___________</span>."</p>
+                        </div>
+                        <div id="zoom-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                        <div id="zoom-feedback" class="hidden mt-2 p-4 rounded-2xl border-3 border-[#2B2D42] font-bold text-center text-lg"></div>
+                        <button id="zoom-next-btn" onclick="nextZoomQuestion()" class="hidden chibi-btn btn-teal py-3 px-6 text-lg font-bold mt-2 w-full">Next Mystery Food ➡️</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DRAG & SPELL -->
+        <section id="section-scramble" class="hidden animate-pop">
+            <div class="chibi-card p-5 sm:p-8 bg-white">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-6 border-b-4 border-dashed border-[#E2E8F0] pb-4">
+                    <div>
+                        <span class="bg-[#14B8A6] text-white text-xs font-extrabold px-3 py-1 rounded-full uppercase">Stage 2</span>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-[#2B2D42] mt-1">🧩 Independent Drag & Spell</h2>
+                        <p class="text-sm font-bold text-gray-600">Practice word spelling and sentence rearranging completely independently!</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button onclick="switchScramblePart('A')" id="scramble-tab-A" class="chibi-btn btn-coral px-5 py-2.5 text-base font-bold">🔤 Part A: Word Spelling</button>
+                    <button onclick="switchScramblePart('B')" id="scramble-tab-B" class="chibi-btn btn-white px-5 py-2.5 text-base font-bold">🗣️ Part B: Sentence Scramble</button>
+                </div>
+
+                <!-- PART A -->
+                <div id="scramble-part-A" class="bg-[#FFFBEB] border-3 border-[#2B2D42] rounded-3xl p-4 sm:p-6 shadow-[0_5px_0_#2B2D42]">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-4">
+                            <div id="scramble-food-art-A" class="w-20 h-20 bg-white rounded-2xl border-3 border-[#2B2D42] p-2 flex items-center justify-center shrink-0"></div>
+                            <div>
+                                <span class="bg-[#FFD166] border-2 border-[#2B2D42] text-xs font-extrabold px-2.5 py-0.5 rounded-full">Part A • Word <span id="partA-round-num">1</span> / 7</span>
+                                <h3 class="text-xl font-bold text-[#2B2D42] mt-1">Drag letters to spell the plural word!</h3>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="resetPartA()" class="chibi-btn btn-white px-3 py-2 text-xs font-bold">🔄 Reset</button>
+                            <button onclick="skipPartA()" class="chibi-btn btn-yellow px-3 py-2 text-xs font-bold">⏭️ Skip / Next</button>
+                        </div>
+                    </div>
+                    <div id="letter-slots-container" class="flex flex-wrap justify-center gap-2 my-4 min-h-[60px]"></div>
+                    <div id="letter-bank-container" class="flex flex-wrap justify-center gap-2 p-3 bg-white/80 rounded-2xl border-2 border-dashed border-[#CBD5E1] min-h-[68px]"></div>
+                    <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div id="partA-feedback" class="font-extrabold text-base text-[#2B2D42]">Spell the word!</div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="checkPartAAnswer()" id="partA-check-btn" class="chibi-btn btn-coral py-2.5 px-6 text-base font-bold flex-1">✅ Check Spelling</button>
+                            <button onclick="skipPartA()" id="partA-next-btn" class="hidden chibi-btn btn-teal py-2.5 px-6 text-base font-bold flex-1">Next Word ➡️</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PART B -->
+                <div id="scramble-part-B" class="hidden bg-[#F0FDFA] border-3 border-[#2B2D42] rounded-3xl p-4 sm:p-6 shadow-[0_5px_0_#2B2D42]">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-4">
+                            <div id="scramble-food-art-B" class="w-20 h-20 bg-white rounded-2xl border-3 border-[#2B2D42] p-2 flex items-center justify-center shrink-0"></div>
+                            <div>
+                                <span class="bg-[#14B8A6] text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full">Part B • Sentence <span id="partB-round-num">1</span> / 7</span>
+                                <h3 class="text-xl font-bold text-[#2B2D42] mt-1">Rearrange sentence blocks!</h3>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="resetPartB()" class="chibi-btn btn-white px-3 py-2 text-xs font-bold">🔄 Reset</button>
+                            <button onclick="skipPartB()" class="chibi-btn btn-yellow px-3 py-2 text-xs font-bold">⏭️ Skip / Next</button>
+                        </div>
+                    </div>
+                    <div id="word-slots-container" class="flex flex-wrap justify-center gap-2 my-4 min-h-[60px]"></div>
+                    <div id="word-bank-container" class="flex flex-wrap justify-center gap-2 p-3 bg-white/80 rounded-2xl border-2 border-dashed border-[#99F6E4] min-h-[68px]"></div>
+                    <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div id="partB-feedback" class="font-extrabold text-base text-[#2B2D42]">Build the sentence!</div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="checkPartBAnswer()" id="partB-check-btn" class="chibi-btn btn-coral py-2.5 px-6 text-base font-bold flex-1">✅ Check Sentence</button>
+                            <button onclick="skipPartB()" id="partB-next-btn" class="hidden chibi-btn btn-teal py-2.5 px-6 text-base font-bold flex-1">Next Sentence ➡️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: STORY Q&A -->
+        <section id="section-dialogue" class="hidden animate-pop">
+            <div class="chibi-card p-5 sm:p-8 bg-white">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-6 border-b-4 border-dashed border-[#E2E8F0] pb-4">
+                    <div>
+                        <span class="bg-[#FFD166] text-[#2B2D42] border-2 border-[#2B2D42] text-xs font-extrabold px-3 py-1 rounded-full uppercase">Stage 3</span>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-[#2B2D42] mt-1">💬 Chibi Mini-Dialogues & Q&A</h2>
+                        <p class="text-sm font-bold text-gray-600">Relatable everyday stories for Taiwanese students!</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadDialogue(0)" id="story-btn-0" class="chibi-btn btn-coral px-3 py-1.5 text-sm font-bold">Story 1</button>
+                        <button onclick="loadDialogue(1)" id="story-btn-1" class="chibi-btn btn-white px-3 py-1.5 text-sm font-bold">Story 2</button>
+                        <button onclick="loadDialogue(2)" id="story-btn-2" class="chibi-btn btn-white px-3 py-1.5 text-sm font-bold">Story 3</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-6 bg-[#FFF9EC] border-3 border-[#2B2D42] rounded-3xl p-5 shadow-[0_5px_0_#2B2D42]">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 id="dialogue-title" class="text-xl font-bold text-[#D9482B]">Story 1</h3>
+                            <button onclick="readFullDialogue()" class="chibi-btn btn-yellow px-3 py-1 text-xs font-extrabold">🔊 Read Aloud</button>
+                        </div>
+                        <div id="dialogue-scene-art" class="w-full h-32 bg-white border-3 border-[#2B2D42] rounded-2xl mb-4 flex items-center justify-around p-2"></div>
+                        <div id="dialogue-bubbles" class="space-y-3"></div>
+                    </div>
+                    <div class="lg:col-span-6 flex flex-col justify-between bg-[#F0FDFA] border-3 border-[#2B2D42] rounded-3xl p-5 shadow-[0_5px_0_#2B2D42]">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="bg-[#14B8A6] text-white text-xs font-extrabold px-3 py-1 rounded-full">Comprehension Check</span>
+                                <span id="dialogue-score-badge" class="text-sm font-extrabold text-[#0F766E]">0 / 3 Answered</span>
+                            </div>
+                            <div id="dialogue-questions-list" class="space-y-4"></div>
+                        </div>
+                        <div class="mt-5 pt-3 border-t-2 border-dashed border-[#99F6E4] flex justify-end">
+                            <button onclick="nextDialogueStory()" class="chibi-btn btn-coral px-5 py-2.5 text-base font-bold">Next Story ➡️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: RESTAURANT MENU -->
+        <section id="section-restaurant" class="hidden animate-pop">
+            <div class="chibi-card p-5 sm:p-8 bg-white">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-6 border-b-4 border-dashed border-[#E2E8F0] pb-4">
+                    <div>
+                        <span class="bg-[#FF477E] text-white text-xs font-extrabold px-3 py-1 rounded-full uppercase">Stage 4</span>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-[#2B2D42] mt-1">🍽️ My Chibi Café Menu Maker</h2>
+                        <p class="text-sm font-bold text-gray-600">Create your menu, confirm to show full-screen, and practice roleplay!</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="resetCafeForNewPlayer()" class="chibi-btn btn-white px-3.5 py-2 text-xs sm:text-sm font-bold">🔄 Reset Menu</button>
+                        <button onclick="confirmFullScreenMenu()" class="chibi-btn btn-teal px-4 py-2 text-xs sm:text-sm font-bold">✅ Confirm & Full-Screen</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 bg-[#FFF5F2] border-3 border-[#2B2D42] rounded-3xl p-5 shadow-[0_5px_0_#2B2D42]">
+                        <h3 class="text-xl font-bold text-[#2B2D42] mb-2">1. Name Your Café</h3>
+                        <input type="text" id="cafe-name-input" value="Momo's Yummy Café" maxlength="28" oninput="updateCafeName()"
+                            class="w-full px-4 py-2.5 rounded-2xl border-3 border-[#2B2D42] font-extrabold text-lg bg-white mb-4">
+                        <h3 class="text-xl font-bold text-[#2B2D42] mb-1">2. Tap Foods to Add</h3>
+                        <div id="cafe-pantry-grid" class="grid grid-cols-2 gap-2.5 mt-2"></div>
+                    </div>
+                    <div class="lg:col-span-7">
+                        <div class="bg-[#FFFDF7] border-4 border-[#2B2D42] rounded-3xl p-6 shadow-[0_8px_0_#2B2D42]">
+                            <div class="text-center mb-4">
+                                <span class="text-xs font-extrabold tracking-widest uppercase text-[#14B8A6]">★ TODAY'S MENU ★</span>
+                                <h3 id="cafe-menu-title" class="text-2xl sm:text-3xl font-black text-[#2B2D42]">Momo's Yummy Café</h3>
+                            </div>
+                            <div id="cafe-menu-items" class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[220px]"></div>
+                            <div class="mt-6 text-center">
+                                <button onclick="confirmFullScreenMenu()" class="chibi-btn btn-coral px-6 py-3 text-lg font-bold">✅ Confirm & Open Full-Screen Menu!</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FULL SCREEN MENU MODAL -->
+        <div id="fullscreen-menu-modal" class="hidden fixed inset-0 z-50 bg-[#2B2D42]/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex items-center justify-center">
+            <div class="w-full max-w-5xl bg-[#FFFDF7] border-4 border-[#2B2D42] rounded-3xl shadow-[0_10px_0_#2B2D42] overflow-hidden animate-pop my-auto p-5 sm:p-8">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div>
+                        <span class="bg-[#FFD166] border-2 border-[#2B2D42] text-xs font-extrabold px-3 py-1 rounded-full">🎉 CONFIRMED MENU</span>
+                        <h2 id="fs-cafe-title" class="text-3xl sm:text-4xl font-black text-[#2B2D42] mt-1">Momo's Yummy Café</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="closeFullScreenMenuToEdit()" class="chibi-btn btn-yellow px-4 py-2.5 text-sm font-bold">✏️ Edit Menu</button>
+                        <button onclick="resetCafeFromFullScreen()" class="chibi-btn btn-white px-4 py-2.5 text-sm font-bold">🔄 Reset</button>
+                    </div>
+                </div>
+                <div class="bg-[#F0FDFA] border-3 border-[#2B2D42] rounded-2xl p-4 mb-6">
+                    <p class="text-xs font-extrabold uppercase text-[#0F766E] mb-2">💬 Tap any dish to practice roleplay!</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-white border-2 border-[#2B2D42] rounded-xl p-3 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-extrabold text-[#D9482B]">Customer asks:</span>
+                                <p id="fs-customer-line" class="text-lg font-black text-[#2B2D42]">"What are these? / What are those?"</p>
+                            </div>
+                            <button onclick="speakText(document.getElementById('fs-customer-line').innerText)" class="chibi-btn btn-white p-2">🔊</button>
+                        </div>
+                        <div class="bg-[#FFFBEB] border-2 border-[#2B2D42] rounded-xl p-3 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-extrabold text-[#0F766E]">Chef answers:</span>
+                                <p id="fs-chef-line" class="text-lg font-black text-[#2B2D42]">"They're _______!"</p>
+                            </div>
+                            <button onclick="speakText(document.getElementById('fs-chef-line').innerText)" class="chibi-btn btn-yellow p-2">🔊</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="fs-menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-6xl mx-auto px-3 py-3 text-center">
+        <p class="text-xs sm:text-sm font-extrabold text-[#0F766E]">
+            🌟 Use <span class="text-[#D9482B]">"What are these?"</span> for near things, and <span class="text-[#D9482B]">"What are those?"</span> for far things! Answer: <span class="underline">"They're _______!"</span> 🌟
+        </p>
+    </footer>
+
+    <script>
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        const VOCAB_DATA = [
+            { id: 'apples', word: 'apples', realImg: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 50% 20%; transform: scale(5.5);' },
+            { id: 'bananas', word: 'bananas', realImg: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 85% 85%; transform: scale(5.8);' },
+            { id: 'oranges', word: 'oranges', realImg: 'https://images.unsplash.com/photo-1547514701-42782101795e?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 70% 30%; transform: scale(5.5);' },
+            { id: 'watermelons', word: 'watermelons', realImg: 'https://images.unsplash.com/photo-1589984662646-e7b2e4962f18?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 50% 50%; transform: scale(5.5);' },
+            { id: 'hamburgers', word: 'hamburgers', realImg: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 50% 35%; transform: scale(5.5);' },
+            { id: 'hotdogs', word: 'hotdogs', realImg: 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 50% 50%; transform: scale(5.5);' },
+            { id: 'sandwiches', word: 'sandwiches', realImg: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=85', zoomStyle: 'object-position: 50% 40%; transform: scale(5.5);' }
+        ];
+
+        let soundEnabled = true;
+        let synth = null;
+
+        function initAudio() {
+            if (!synth && window.Tone) {
+                try {
+                    synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: 'triangle' },
+                        envelope: { attack: 0.01, decay: 0.15, sustain: 0.05, release: 0.2 }
+                    }).toDestination();
+                    synth.volume.value = 0;
+                } catch (e) {}
+            }
+        }
+
+        function playSfx(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (window.Tone && Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'pop') {
+                    if (synth) synth.triggerAttackRelease('C5', '16n', now);
+                } else if (type === 'success' || type === 'bell') {
+                    if (synth) {
+                        synth.triggerAttackRelease('C6', '16n', now);
+                        synth.triggerAttackRelease('E6', '16n', now + 0.08);
+                        synth.triggerAttackRelease('G6', '16n', now + 0.16);
+                        synth.triggerAttackRelease('C7', '8n', now + 0.24);
+                    }
+                } else if (type === 'error' || type === 'buzzer') {
+                    if (synth) {
+                        synth.triggerAttackRelease('G2', '8n', now);
+                        synth.triggerAttackRelease('E2', '8n', now + 0.1);
+                    }
+                } else if (type === 'click') {
+                    if (synth) synth.triggerAttackRelease('G4', '32n', now);
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            btn.innerText = soundEnabled ? '🔊' : '🔇';
+            playSfx('click');
+        }
+
+        let totalStars = 0;
+        function addStars(num) {
+            totalStars += num;
+            document.getElementById('star-count').innerText = totalStars;
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                const voices = window.speechSynthesis.getVoices();
+                const calmVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Google UK English Female') || v.name.includes('Natural') || v.lang.startsWith('en'));
+                if (calmVoice) utterance.voice = calmVoice;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function switchTab(tabId) {
+            playSfx('click');
+            ['home', 'zoom', 'scramble', 'dialogue', 'restaurant'].forEach(id => {
+                const sec = document.getElementById(`section-${id}`);
+                const btn = document.getElementById(`tab-${id}`);
+                if (sec) sec.classList.add('hidden');
+                if (btn) {
+                    btn.classList.remove('btn-coral', 'btn-teal');
+                    btn.classList.add('btn-white');
+                }
+            });
+
+            const targetSec = document.getElementById(`section-${tabId}`);
+            const targetBtn = document.getElementById(`tab-${tabId}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+            if (targetBtn) {
+                targetBtn.classList.remove('btn-white');
+                targetBtn.classList.add(tabId === 'zoom' ? 'btn-coral' : 'btn-teal');
+            }
+
+            if (tabId === 'zoom' && !zoomInitialized) initZoomGame();
+            if (tabId === 'scramble') {
+                if (!partAInitialized) initPartA();
+                if (!partBInitialized) initPartB();
+            }
+            if (tabId === 'dialogue' && !dialogueInitialized) initDialogueGame();
+            if (tabId === 'restaurant' && !restaurantInitialized) initRestaurantGame();
+        }
+
+        function renderHomeVocab() {
+            const grid = document.getElementById('vocab-preview-grid');
+            if (!grid) return;
+            grid.innerHTML = VOCAB_DATA.map(v => `
+                <div class="chibi-card p-3 bg-white flex flex-col items-center text-center">
+                    <img src="${v.realImg}" class="w-16 h-16 rounded-2xl object-cover border-2 border-[#2B2D42] mb-1.5" alt="${v.word}">
+                    <span class="font-black text-sm text-[#2B2D42] capitalize">${v.word}</span>
+                </div>
+            `).join('');
+        }
+
+        // STAGE 1: ZOOM
+        let zoomInitialized = false;
+        let zoomOrder = [];
+        let zoomIndex = 0;
+        let zoomAnswered = false;
+
+        function initZoomGame() {
+            zoomInitialized = true;
+            zoomOrder = shuffleArray(VOCAB_DATA);
+            zoomIndex = 0;
+            loadZoomQuestion();
+        }
+
+        function loadZoomQuestion() {
+            zoomAnswered = false;
+            const target = zoomOrder[zoomIndex];
+            document.getElementById('zoom-q-num').innerText = zoomIndex + 1;
+            document.getElementById('zoom-blank-preview').innerText = '___________';
+            document.getElementById('zoom-next-btn').classList.add('hidden');
+            document.getElementById('zoom-feedback').classList.add('hidden');
+
+            const isNear = zoomIndex % 2 === 0;
+            document.getElementById('zoom-distance-tag').innerText = isNear ? 'Right here (Near)' : 'Over there (Far)';
+            document.getElementById('zoom-distance-tag').className = `text-xs font-extrabold uppercase px-2 py-0.5 rounded ${isNear ? 'bg-[#14B8A6] text-white' : 'bg-[#FF6B4A] text-white'}`;
+            document.getElementById('zoom-question-text').innerText = isNear ? '"What are these?"' : '"What are those?"';
+            document.getElementById('zoom-pointer-icon').innerText = isNear ? '👉' : '🔭';
+
+            const container = document.getElementById('zoom-svg-container');
+            container.innerHTML = `<img src="${target.realImg}" style="${target.zoomStyle}; width:100%; height:100%; object-fit:cover;" alt="Zoom Food">`;
+            document.getElementById('zoom-badge').innerText = '🔬 550% Macro Zoom';
+
+            const options = shuffleArray([target, ...shuffleArray(VOCAB_DATA.filter(v => v.id !== target.id)).slice(0, 3)]);
+            document.getElementById('zoom-options-grid').innerHTML = options.map(opt => `
+                <button onclick="checkZoomChoice('${opt.id}')" id="zoom-opt-${opt.id}" class="chibi-btn btn-white p-3.5 text-base font-bold capitalize flex items-center justify-center gap-2">
+                    <span>🍽️</span>
+                    <span>${opt.word}</span>
+                </button>
+            `).join('');
+        }
+
+        function hintZoomOut() {
+            playSfx('pop');
+            const container = document.getElementById('zoom-svg-container').firstElementChild;
+            if (container) container.style.transform = 'scale(1.8)';
+            document.getElementById('zoom-badge').innerText = '💡 Zoomed Out Hint (1.8x)';
+        }
+
+        function checkZoomChoice(selectedId) {
+            if (zoomAnswered) return;
+            const target = zoomOrder[zoomIndex];
+            const btn = document.getElementById(`zoom-opt-${selectedId}`);
+            const fb = document.getElementById('zoom-feedback');
+
+            if (selectedId === target.id) {
+                zoomAnswered = true;
+                playSfx('bell');
+                addStars(2);
+                btn.classList.replace('btn-white', 'btn-teal');
+                document.getElementById('zoom-blank-preview').innerText = target.word;
+
+                const container = document.getElementById('zoom-svg-container').firstElementChild;
+                if (container) container.style.transform = 'scale(1.0)';
+                document.getElementById('zoom-badge').innerText = `✨ Revealed: ${target.word}!`;
+
+                fb.className = 'mt-2 p-4 rounded-2xl border-3 border-[#2B2D42] font-extrabold text-center text-lg stamp-correct animate-pop';
+                fb.innerHTML = `✅ <span class="text-3xl font-black">✔</span> Awesome! "They're ${target.word}!" (+2 ⭐)`;
+                fb.classList.remove('hidden');
+                speakText(`They're ${target.word}!`);
+
+                const nextBtn = document.getElementById('zoom-next-btn');
+                nextBtn.innerText = zoomIndex < zoomOrder.length - 1 ? 'Next Mystery Food ➡️' : 'Play Again 🔄';
+                nextBtn.classList.remove('hidden');
+            } else {
+                playSfx('buzzer');
+                btn.classList.add('animate-shake', 'bg-red-100');
+                fb.className = 'mt-2 p-3 rounded-2xl border-3 border-[#2B2D42] font-bold text-center text-base stamp-wrong animate-pop';
+                fb.innerHTML = `❌ <span class="text-3xl font-black">✖</span> Not quite! Try another guess or use Zoom Out Hint!`;
+                fb.classList.remove('hidden');
+            }
+        }
+
+        function nextZoomQuestion() {
+            playSfx('click');
+            zoomIndex++;
+            if (zoomIndex >= zoomOrder.length) zoomOrder = shuffleArray(VOCAB_DATA), zoomIndex = 0;
+            loadZoomQuestion();
+        }
+
+        // STAGE 2: SCRAMBLE
+        let partAInitialized = false;
+        let partBInitialized = false;
+        let partAOrder = [];
+        let partAIndex = 0;
+        let letterSlotsState = [];
+        let availableLetterTiles = [];
+
+        let partBOrder = [];
+        let partBIndex = 0;
+        let wordSlotsState = [];
+        let availableWordTokens = [];
+        let currentSentenceTokens = [];
+
+        function switchScramblePart(part) {
+            playSfx('click');
+            if (part === 'A') {
+                document.getElementById('scramble-part-A').classList.remove('hidden');
+                document.getElementById('scramble-part-B').classList.add('hidden');
+                document.getElementById('scramble-tab-A').className = 'chibi-btn btn-coral px-5 py-2.5 text-base font-bold';
+                document.getElementById('scramble-tab-B').className = 'chibi-btn btn-white px-5 py-2.5 text-base font-bold';
+            } else {
+                document.getElementById('scramble-part-A').classList.add('hidden');
+                document.getElementById('scramble-part-B').classList.remove('hidden');
+                document.getElementById('scramble-tab-A').className = 'chibi-btn btn-white px-5 py-2.5 text-base font-bold';
+                document.getElementById('scramble-tab-B').className = 'chibi-btn btn-teal px-5 py-2.5 text-base font-bold';
+            }
+        }
+
+        function initPartA() {
+            partAInitialized = true;
+            partAOrder = shuffleArray(VOCAB_DATA);
+            partAIndex = 0;
+            loadPartARound();
+        }
+
+        function loadPartARound() {
+            const target = partAOrder[partAIndex];
+            document.getElementById('partA-round-num').innerText = partAIndex + 1;
+            document.getElementById('scramble-food-art-A').innerHTML = `<img src="${target.realImg}" class="w-full h-full object-cover rounded-xl" alt="Food">`;
+            document.getElementById('partA-feedback').className = 'font-extrabold text-base text-[#2B2D42]';
+            document.getElementById('partA-feedback').innerText = 'Drag or tap letters to spell the word!';
+            document.getElementById('partA-check-btn').classList.remove('hidden');
+            document.getElementById('partA-next-btn').classList.add('hidden');
+
+            const letters = target.word.split('');
+            letterSlotsState = new Array(letters.length).fill(null);
+            availableLetterTiles = shuffleArray(letters.map((char, i) => ({ id: i, char })));
+            renderLetterUI();
+        }
+
+        function renderLetterUI() {
+            const slotsContainer = document.getElementById('letter-slots-container');
+            slotsContainer.innerHTML = letterSlotsState.map((slot, idx) => `
+                <div onclick="returnLetterTile(${idx})" class="letter-slot ${slot ? 'filled animate-pop' : ''}">
+                    ${slot ? slot.char : '_'}
+                </div>
+            `).join('');
+
+            const bankContainer = document.getElementById('letter-bank-container');
+            bankContainer.innerHTML = availableLetterTiles.map(tile => `
+                <div onclick="placeLetterTile(${tile.id})" class="draggable-tile hover:bg-yellow-100">
+                    ${tile.char}
+                </div>
+            `).join('');
+        }
+
+        function placeLetterTile(tileId) {
+            playSfx('pop');
+            const tileIdx = availableLetterTiles.findIndex(t => t.id === tileId);
+            if (tileIdx === -1) return;
+            const emptySlotIdx = letterSlotsState.indexOf(null);
+            if (emptySlotIdx === -1) return;
+
+            letterSlotsState[emptySlotIdx] = availableLetterTiles[tileIdx];
+            availableLetterTiles.splice(tileIdx, 1);
+            renderLetterUI();
+        }
+
+        function returnLetterTile(slotIdx) {
+            if (!letterSlotsState[slotIdx]) return;
+            playSfx('pop');
+            availableLetterTiles.push(letterSlotsState[slotIdx]);
+            letterSlotsState[slotIdx] = null;
+            renderLetterUI();
+        }
+
+        function resetPartA() {
+            playSfx('click');
+            loadPartARound();
+        }
+
+        function skipPartA() {
+            playSfx('click');
+            partAIndex++;
+            if (partAIndex >= partAOrder.length) partAOrder = shuffleArray(VOCAB_DATA), partAIndex = 0;
+            loadPartARound();
+        }
+
+        function checkPartAAnswer() {
+            const target = partAOrder[partAIndex];
+            const spelled = letterSlotsState.map(s => s ? s.char : '').join('');
+            const fb = document.getElementById('partA-feedback');
+            if (letterSlotsState.includes(null)) {
+                fb.className = 'font-extrabold text-base text-[#D9482B]';
+                fb.innerText = '⚠️ Fill in all letter boxes!';
+                return;
+            }
+            if (spelled === target.word) {
+                playSfx('bell');
+                addStars(2);
+                fb.className = 'font-extrabold text-base p-3 rounded-2xl stamp-correct text-center';
+                fb.innerHTML = `✅ <span class="text-2xl font-black">✔</span> Correct spelling! "${target.word}" (+2 ⭐)`;
+                speakText(target.word);
+                document.getElementById('partA-check-btn').classList.add('hidden');
+                document.getElementById('partA-next-btn').classList.remove('hidden');
+            } else {
+                playSfx('buzzer');
+                fb.className = 'font-extrabold text-base p-3 rounded-2xl stamp-wrong text-center';
+                fb.innerHTML = `❌ <span class="text-2xl font-black">✖</span> Not correct yet! Try again.`;
+            }
+        }
+
+        function initPartB() {
+            partBInitialized = true;
+            partBOrder = shuffleArray(VOCAB_DATA);
+            partBIndex = 0;
+            loadPartBRound();
+        }
+
+        function loadPartBRound() {
+            const target = partBOrder[partBIndex];
+            document.getElementById('partB-round-num').innerText = partBIndex + 1;
+            document.getElementById('scramble-food-art-B').innerHTML = `<img src="${target.realImg}" class="w-full h-full object-cover rounded-xl" alt="Food">`;
+            document.getElementById('partB-feedback').className = 'font-extrabold text-base text-[#2B2D42]';
+            document.getElementById('partB-feedback').innerText = 'Rearrange the sentence blocks!';
+            document.getElementById('partB-check-btn').classList.remove('hidden');
+            document.getElementById('partB-next-btn').classList.add('hidden');
+
+            const isNear = partBIndex % 2 === 0;
+            const qWord = isNear ? "What are these?" : "What are those?";
+            currentSentenceTokens = [qWord, "They're", `${target.word}.`];
+            wordSlotsState = new Array(currentSentenceTokens.length).fill(null);
+            availableWordTokens = shuffleArray(currentSentenceTokens.map((text, i) => ({ id: i, text })));
+            renderWordUI();
+        }
+
+        function renderWordUI() {
+            const slotsContainer = document.getElementById('word-slots-container');
+            slotsContainer.innerHTML = wordSlotsState.map((slot, idx) => `
+                <div onclick="returnWordToken(${idx})" class="word-slot ${slot ? 'filled animate-pop' : ''}">
+                    ${slot ? slot.text : '...'}
+                </div>
+            `).join('');
+
+            const bankContainer = document.getElementById('word-bank-container');
+            bankContainer.innerHTML = availableWordTokens.map(tok => `
+                <div onclick="placeWordToken(${tok.id})" class="draggable-tile hover:bg-teal-100 text-sm">
+                    ${tok.text}
+                </div>
+            `).join('');
+        }
+
+        function placeWordToken(tokId) {
+            playSfx('pop');
+            const tokIdx = availableWordTokens.findIndex(t => t.id === tokId);
+            if (tokIdx === -1) return;
+            const emptySlotIdx = wordSlotsState.indexOf(null);
+            if (emptySlotIdx === -1) return;
+
+            wordSlotsState[emptySlotIdx] = availableWordTokens[tokIdx];
+            availableWordTokens.splice(tokIdx, 1);
+            renderWordUI();
+        }
+
+        function returnWordToken(slotIdx) {
+            if (!wordSlotsState[slotIdx]) return;
+            playSfx('pop');
+            availableWordTokens.push(wordSlotsState[slotIdx]);
+            wordSlotsState[slotIdx] = null;
+            renderWordUI();
+        }
+
+        function resetPartB() {
+            playSfx('click');
+            loadPartBRound();
+        }
+
+        function skipPartB() {
+            playSfx('click');
+            partBIndex++;
+            if (partBIndex >= partBOrder.length) partBOrder = shuffleArray(VOCAB_DATA), partBIndex = 0;
+            loadPartBRound();
+        }
+
+        function checkPartBAnswer() {
+            const built = wordSlotsState.map(s => s ? s.text : '').join(' ');
+            const expected = currentSentenceTokens.join(' ');
+            const fb = document.getElementById('partB-feedback');
+            if (wordSlotsState.includes(null)) {
+                fb.className = 'font-extrabold text-base text-[#D9482B]';
+                fb.innerText = '⚠️ Fill in all sentence blocks!';
+                return;
+            }
+            if (built === expected) {
+                playSfx('bell');
+                addStars(2);
+                fb.className = 'font-extrabold text-base p-3 rounded-2xl stamp-correct text-center';
+                fb.innerHTML = `✅ <span class="text-2xl font-black">✔</span> Correct sentence! "${expected}" (+2 ⭐)`;
+                speakText(expected);
+                document.getElementById('partB-check-btn').classList.add('hidden');
+                document.getElementById('partB-next-btn').classList.remove('hidden');
+            } else {
+                playSfx('buzzer');
+                fb.className = 'font-extrabold text-base p-3 rounded-2xl stamp-wrong text-center';
+                fb.innerHTML = `❌ <span class="text-2xl font-black">✖</span> Check the sentence order!`;
+            }
+        }
+
+        // STAGE 3: DIALOGUE Q&A
+        let dialogueInitialized = false;
+        let currentStoryIdx = 0;
+        let storySolvedMap = {};
+
+        const DIALOGUES_DATA = [
+            {
+                title: "Story 1: Tainan Night Market",
+                scene: ['🍎', '🍌', 'oranges'],
+                lines: [
+                    { speaker: "Momo", text: "Look at that fruit stand! What are those?" },
+                    { speaker: "Pip", text: "They're fresh oranges and sweet bananas!" },
+                    { speaker: "Momo", text: "Yummy! And what are these right here?" },
+                    { speaker: "Pip", text: "They're big juicy watermelons and crisp apples!" }
+                ],
+                questions: [
+                    { q: "1. What does Momo ask about the fruit stand far away?", options: ["What are those?", "What are these?"], answer: 0 },
+                    { q: "2. What does Pip say they are?", options: ["They're oranges and bananas.", "They're hamburgers."], answer: 0 }
+                ]
+            },
+            {
+                title: "Story 2: School Lunchbox Break",
+                scene: ['🍔', '🥪', 'hotdogs'],
+                lines: [
+                    { speaker: "Leo", text: "I'm so hungry! What are these in my lunchbox?" },
+                    { speaker: "Emma", text: "They're delicious cheese sandwiches and hotdogs!" },
+                    { speaker: "Leo", text: "And what are those on the teacher's desk?" },
+                    { speaker: "Emma", text: "They're big tasty hamburgers!" }
+                ],
+                questions: [
+                    { q: "1. What are the food items in Leo's lunchbox?", options: ["Sandwiches and hotdogs", "Apples and oranges"], answer: 0 },
+                    { q: "2. What are the food items on the teacher's desk?", options: ["Hamburgers", "Watermelons"], answer: 0 }
+                ]
+            },
+            {
+                title: "Story 3: After Class Snack Time",
+                scene: ['🍎', '🍔', 'watermelons'],
+                lines: [
+                    { speaker: "Mia", text: "Let's buy snacks! What are these on the front tray?" },
+                    { speaker: "Max", text: "They're red apples and juicy watermelons!" },
+                    { speaker: "Mia", text: "And what are those on the back counter?" },
+                    { speaker: "Max", text: "They're hot hamburgers for everyone!" }
+                ],
+                questions: [
+                    { q: "1. What are on the front tray?", options: ["Apples and watermelons", "Bananas"], answer: 0 },
+                    { q: "2. What are on the back counter?", options: ["Hot hamburgers", "Sandwiches"], answer: 0 }
+                ]
+            }
+        ];
+
+        function initDialogueGame() {
+            dialogueInitialized = true;
+            loadDialogue(0);
+        }
+
+        function loadDialogue(idx) {
+            playSfx('click');
+            currentStoryIdx = idx;
+            for (let i = 0; i < 3; i++) {
+                const btn = document.getElementById(`story-btn-${i}`);
+                if (btn) {
+                    btn.className = i === idx ? 'chibi-btn btn-coral px-3 py-1.5 text-sm font-bold' : 'chibi-btn btn-white px-3 py-1.5 text-sm font-bold';
+                }
+            }
+
+            const story = DIALOGUES_DATA[idx];
+            document.getElementById('dialogue-title').innerText = story.title;
+            document.getElementById('dialogue-scene-art').innerHTML = story.scene.map((item, i) => {
+                const foodObj = VOCAB_DATA[i % VOCAB_DATA.length];
+                return `
+                    <div class="w-16 h-16 bg-white border-2 border-[#2B2D42] rounded-2xl flex items-center justify-center shadow-sm animate-float overflow-hidden p-1">
+                        <img src="${foodObj.realImg}" class="w-full h-full object-cover rounded-xl" alt="Food">
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('dialogue-bubbles').innerHTML = story.lines.map(l => `
+                <div class="bg-white border-2 border-[#2B2D42] rounded-2xl p-3 shadow-sm">
+                    <span class="text-xs font-black text-[#FF6B4A] uppercase">${l.speaker}:</span>
+                    <p class="text-sm font-extrabold text-[#2B2D42] mt-0.5">"${l.text}"</p>
+                </div>
+            `).join('');
+
+            renderDialogueQuestions();
+        }
+
+        function renderDialogueQuestions() {
+            const story = DIALOGUES_DATA[currentStoryIdx];
+            let solvedCount = 0;
+            document.getElementById('dialogue-questions-list').innerHTML = story.questions.map((q, qIdx) => {
+                const key = `${currentStoryIdx}-${qIdx}`;
+                const solved = storySolvedMap[key];
+                if (solved) solvedCount++;
+                return `
+                    <div class="bg-white border-2 border-[#2B2D42] rounded-2xl p-3.5 shadow-sm">
+                        <p class="font-extrabold text-sm text-[#2B2D42] mb-2">${q.q}</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            ${q.options.map((opt, optIdx) => {
+                                const isCorrectOpt = optIdx === q.answer;
+                                let btnClass = 'btn-white';
+                                if (solved && isCorrectOpt) btnClass = 'btn-teal';
+                                return `
+                                    <button onclick="answerDialogueQ(${qIdx}, ${optIdx})" class="chibi-btn ${btnClass} px-3 py-2 text-xs font-bold justify-start">
+                                        ${opt} ${solved && isCorrectOpt ? '✔' : ''}
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('dialogue-score-badge').innerText = `${solvedCount} / ${story.questions.length} Answered`;
+        }
+
+        function answerDialogueQ(qIdx, optIdx) {
+            const key = `${currentStoryIdx}-${qIdx}`;
+            const story = DIALOGUES_DATA[currentStoryIdx];
+            if (optIdx === story.questions[qIdx].answer) {
+                storySolvedMap[key] = true;
+                playSfx('bell');
+                addStars(2);
+                renderDialogueQuestions();
+            } else {
+                playSfx('buzzer');
+                const qCard = document.getElementById('dialogue-questions-list').children[qIdx];
+                if (qCard) {
+                    qCard.classList.add('animate-shake', 'border-red-500');
+                    setTimeout(() => qCard.classList.remove('animate-shake', 'border-red-500'), 400);
+                }
+            }
+        }
+
+        function readFullDialogue() {
+            speakText(DIALOGUES_DATA[currentStoryIdx].lines.map(l => l.text).join(' '));
+        }
+
+        function nextDialogueStory() {
+            loadDialogue((currentStoryIdx + 1) % DIALOGUES_DATA.length);
+        }
+
+        // STAGE 4: RESTAURANT MENU
+        let restaurantInitialized = false;
+        let customMenu = [
+            { id: 'apples', price: 3, location: 'near' },
+            { id: 'hamburgers', price: 6, location: 'far' },
+            { id: 'sandwiches', price: 5, location: 'near' },
+            { id: 'bananas', price: 2, location: 'far' }
+        ];
+
+        function initRestaurantGame() {
+            restaurantInitialized = true;
+            renderCafePantry();
+            renderCustomMenuBoard();
+        }
+
+        function updateCafeName() {
+            document.getElementById('cafe-menu-title').innerText = document.getElementById('cafe-name-input').value.trim() || "My Café";
+        }
+
+        function resetCafeForNewPlayer() {
+            playSfx('click');
+            document.getElementById('cafe-name-input').value = "Momo's Yummy Café";
+            updateCafeName();
+            customMenu = [{ id: 'apples', price: 3, location: 'near' }, { id: 'bananas', price: 2, location: 'far' }];
+            renderCafePantry();
+            renderCustomMenuBoard();
+        }
+
+        function renderCafePantry() {
+            document.getElementById('cafe-pantry-grid').innerHTML = VOCAB_DATA.map(food => {
+                const selected = customMenu.some(m => m.id === food.id);
+                return `
+                    <button onclick="toggleMenuFood('${food.id}')" class="chibi-btn ${selected ? 'btn-yellow' : 'btn-white'} p-2 flex items-center justify-between text-left">
+                        <div class="flex items-center gap-2">
+                            <img src="${food.realImg}" class="w-8 h-8 rounded-lg object-cover" alt="Food">
+                            <span class="font-extrabold text-xs capitalize">${food.word}</span>
+                        </div>
+                        <span>${selected ? '✅' : '➕'}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function toggleMenuFood(foodId) {
+            playSfx('pop');
+            const idx = customMenu.findIndex(m => m.id === foodId);
+            if (idx > -1) {
+                if (customMenu.length <= 1) return;
+                customMenu.splice(idx, 1);
+            } else {
+                customMenu.push({ id: foodId, price: 3, location: 'near' });
+            }
+            renderCafePantry();
+            renderCustomMenuBoard();
+        }
+
+        function changeMenuPrice(foodId, delta) {
+            playSfx('click');
+            const item = customMenu.find(m => m.id === foodId);
+            if (item) { item.price = Math.max(1, item.price + delta); renderCustomMenuBoard(); }
+        }
+
+        function toggleMenuLocation(foodId) {
+            playSfx('click');
+            const item = customMenu.find(m => m.id === foodId);
+            if (item) { item.location = item.location === 'near' ? 'far' : 'near'; renderCustomMenuBoard(); }
+        }
+
+        function renderCustomMenuBoard() {
+            document.getElementById('cafe-menu-items').innerHTML = customMenu.map(entry => {
+                const food = VOCAB_DATA.find(v => v.id === entry.id);
+                const isNear = entry.location === 'near';
+                return `
+                    <div class="bg-white border-3 border-[#2B2D42] rounded-2xl p-3 flex items-center justify-between shadow-[0_3px_0_#2B2D42]">
+                        <div class="flex items-center gap-2">
+                            <img src="${food.realImg}" class="w-12 h-12 rounded-xl object-cover border-2 border-[#2B2D42]" alt="Food">
+                            <div>
+                                <h4 class="font-black text-sm capitalize text-[#2B2D42]">${food.word}</h4>
+                                <button onclick="toggleMenuLocation('${food.id}')" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-[#2B2D42] mt-0.5 ${isNear ? 'bg-[#CCFBF1] text-[#0F766E]' : 'bg-[#FFEDD5] text-[#D9482B]'}">
+                                    ${isNear ? '👇 Near' : '👉 Far'}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center bg-[#FFFBEB] border-2 border-[#2B2D42] rounded-xl px-2 py-1">
+                            <span class="font-black text-sm text-[#D9482B]">$${entry.price}</span>
+                            <div class="flex gap-1 mt-0.5">
+                                <button onclick="changeMenuPrice('${food.id}', -1)" class="w-4 h-4 bg-white border border-[#2B2D42] text-[10px] font-bold">-</button>
+                                <button onclick="changeMenuPrice('${food.id}', 1)" class="w-4 h-4 bg-white border border-[#2B2D42] text-[10px] font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function confirmFullScreenMenu() {
+            playSfx('success');
+            addStars(2);
+            document.getElementById('fs-cafe-title').innerText = document.getElementById('cafe-name-input').value.trim() || "My Café";
+            document.getElementById('fs-customer-line').innerText = '"What are these? / What are those?"';
+            document.getElementById('fs-chef-line').innerText = '"They\'re _______! They\'re $___."';
+
+            document.getElementById('fs-menu-grid').innerHTML = customMenu.map(entry => {
+                const food = VOCAB_DATA.find(v => v.id === entry.id);
+                const isNear = entry.location === 'near';
+                return `
+                    <div onclick="practiceFsItem('${entry.id}')" class="cursor-pointer bg-white hover:bg-[#FFFBEB] border-3 border-[#2B2D42] rounded-3xl p-4 flex flex-col items-center text-center shadow-[0_4px_0_#2B2D42]">
+                        <span class="text-xs font-extrabold px-3 py-0.5 rounded-full border border-[#2B2D42] mb-2 ${isNear ? 'bg-[#CCFBF1] text-[#0F766E]' : 'bg-[#FFEDD5] text-[#D9482B]'}">
+                            ${isNear ? '👇 Near ("these")' : '👉 Far ("those")'}
+                        </span>
+                        <img src="${food.realImg}" class="w-20 h-20 rounded-2xl object-cover border-3 border-[#2B2D42] my-1" alt="Food">
+                        <h3 class="text-xl font-black text-[#2B2D42] capitalize mt-1">${food.word}</h3>
+                        <div class="mt-2 bg-[#FFD166] border-2 border-[#2B2D42] rounded-xl px-4 py-1 font-black text-lg text-[#2B2D42]">$${entry.price}</div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('fullscreen-menu-modal').classList.remove('hidden');
+        }
+
+        function practiceFsItem(foodId) {
+            playSfx('pop');
+            const entry = customMenu.find(m => m.id === foodId);
+            const food = VOCAB_DATA.find(v => v.id === foodId);
+            const q = entry.location === 'near' ? '"What are these?"' : '"What are those?"';
+            const a = `"They're ${food.word}! They're $${entry.price}."`;
+            document.getElementById('fs-customer-line').innerText = q;
+            document.getElementById('fs-chef-line').innerText = a;
+            speakText(`${q} ${a}`);
+        }
+
+        function closeFullScreenMenuToEdit() {
+            playSfx('click');
+            document.getElementById('fullscreen-menu-modal').classList.add('hidden');
+        }
+
+        function resetCafeFromFullScreen() {
+            document.getElementById('fullscreen-menu-modal').classList.add('hidden');
+            resetCafeForNewPlayer();
+        }
+
+        window.onload = function() {
+            renderHomeVocab();
+        };
+    </script>
+</body>
+</html>
